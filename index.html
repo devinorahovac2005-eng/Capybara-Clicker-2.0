@@ -1,0 +1,499 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capybara Clicker</title>
+
+<style>
+:root {
+    --bg: #e6f2d5;
+    --green: #537c45;
+    --dark: #29452d;
+    --cream: #fff5df;
+    --brown: #8c5838;
+    --gold: #ffc94f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--dark);
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background: var(--green);
+    color: white;
+    padding: 16px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0 0 12px;
+    font-size: 30px;
+}
+
+.stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.stat {
+    background: var(--cream);
+    color: var(--dark);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 0 12px;
+}
+
+.panel {
+    background: var(--cream);
+    border: 3px solid #c9d9b1;
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.scene {
+    min-height: 330px;
+    background: linear-gradient(#a8d9ee 0 52%, #70b9a0 52% 100%);
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 12px 0;
+}
+
+#capy {
+    font-size: 120px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: transform .12s;
+    filter: drop-shadow(0 8px 2px #527f5680);
+}
+
+#capy:active {
+    transform: scale(.88) rotate(-4deg);
+}
+
+#coinCount {
+    font-size: 34px;
+    font-weight: bold;
+    color: #98611b;
+    overflow-wrap: anywhere;
+    text-align: center;
+}
+
+.bigButton {
+    width: 100%;
+    padding: 15px;
+    border: 0;
+    border-radius: 13px;
+    background: var(--gold);
+    color: #553719;
+    font-weight: bold;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+h2 { margin-top: 8px; }
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.tab {
+    flex: 1;
+    border: none;
+    padding: 12px 5px;
+    border-radius: 10px;
+    background: #dce7d0;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.tab.active {
+    background: var(--green);
+    color: white;
+}
+
+.upgrade {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 11px;
+    margin: 8px 0;
+    background: white;
+    color: var(--dark);
+    border: 2px solid #e1d3b6;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.upgrade .emoji { font-size: 32px; }
+
+.upgrade .details {
+    flex: 1;
+    min-width: 0;
+}
+
+.upgrade strong { display: block; }
+
+.upgrade small {
+    display: block;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.price {
+    font-weight: bold;
+    white-space: nowrap;
+    color: #98611b;
+}
+
+.upgrade:disabled {
+    opacity: .48;
+    cursor: not-allowed;
+}
+
+.lower {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    max-width: 1100px;
+    margin: 0 auto 24px;
+    padding: 0 12px;
+}
+
+#message {
+    min-height: 24px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.rebirth {
+    background: #e7d6ff;
+    border-color: #c8a9f2;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--green);
+    font-weight: bold;
+}
+
+@media(max-width: 700px) {
+    main { grid-template-columns: 1fr; }
+    .lower { grid-template-columns: 1fr; }
+    header h1 { font-size: 25px; }
+    .scene { min-height: 260px; }
+    #capy { font-size: 105px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+    <h1>🦫 Capybara Clicker 🌿</h1>
+    <div class="stats">
+        <div class="stat">🪙 <span id="topMoney">0</span></div>
+        <div class="stat">🔄 Rebirths: <span id="rebirths">0</span></div>
+        <div class="stat">✨ Multiplikator: x<span id="multi">1</span></div>
+        <div class="stat">🏭 <span id="cps">0</span>/Sek.</div>
+    </div>
+</header>
+
+<main>
+    <section class="panel">
+        <h2>🌳 Dein Capybara</h2>
+        <div id="coinCount">0 Münzen</div>
+        <p style="text-align:center">
+            Klick auf dein Capybara, um Münzen zu verdienen!
+        </p>
+
+        <div class="scene">
+            <button id="capy" onclick="clickCapy()" aria-label="Capybara anklicken">🦫</button>
+            <p id="clickInfo">+1 Münze pro Klick</p>
+        </div>
+
+        <button class="bigButton" onclick="clickCapy()">
+            🐾 Capybara streicheln!
+        </button>
+
+        <p id="message"></p>
+
+        <div class="stat">
+            💤 Offline-Einnahmen:
+            <span id="offlineInfo">Noch keine</span>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>🛒 Upgrade-Shop</h2>
+        <div class="tabs">
+            <button id="manualTab" class="tab active"
+                onclick="showTab('manual')">👆 Manuell</button>
+            <button id="autoTab" class="tab"
+                onclick="showTab('auto')">🤖 Automatisch</button>
+        </div>
+        <div id="upgradeList"></div>
+    </section>
+</main>
+
+<section class="lower">
+    <div class="panel rebirth">
+        <h2>🔄 Rebirth</h2>
+        <p>Setze Münzen und Shop-Upgrades zurück und steigere deinen Multiplikator dauerhaft.</p>
+        <p>Nächster Multiplikator: <strong id="nextMulti">x2</strong></p>
+        <p>Kosten: <strong id="rebirthPrice">100.000</strong> Münzen</p>
+        <button class="bigButton" id="rebirthButton"
+            onclick="doRebirth()">🔄 Rebirth durchführen</button>
+    </div>
+
+    <div class="panel">
+        <h2>💾 Spielstand</h2>
+        <p>Dein Fortschritt wird automatisch in diesem Browser gespeichert.</p>
+        <p>Offline-Einnahmen werden anhand deiner automatischen Produktion berechnet.</p>
+        <button class="bigButton" onclick="saveGame()">💾 Jetzt speichern</button>
+    </div>
+</section>
+
+<footer>🌿 Ein entspanntes Leben für dein Capybara 🌿</footer>
+
+<script>
+const SAVE_KEY = "capybaraClickerSaveV1";
+
+const manualUpgrades = [
+    { name: "Kleiner Snack", emoji: "🥕", price: 10, power: 1 },
+    { name: "Karottenkorb", emoji: "🥕", price: 100, power: 10 },
+    { name: "Goldene Karotte", emoji: "✨", price: 1000, power: 100 },
+    { name: "Capybara-Krone", emoji: "👑", price: 10000, power: 1000 },
+    { name: "Magische Karotte", emoji: "🌟", price: 100000, power: 10000 }
+];
+
+const autoUpgrades = [
+    { name: "Kleiner Helfer", emoji: "🐣", price: 50, cps: 1 },
+    { name: "Karotten-Fabrik", emoji: "🏭", price: 500, cps: 10 },
+    { name: "Capybara-Armee", emoji: "🦫", price: 5000, cps: 100 },
+    { name: "Turbo-Maschine", emoji: "⚙️", price: 50000, cps: 1000 },
+    { name: "Goldene Fabrik", emoji: "🏆", price: 500000, cps: 10000 }
+];
+
+let money = 0;
+let clickPower = 1;
+let autoPower = 0;
+let rebirths = 0;
+let manualLevels = Array(5).fill(0);
+let autoLevels = Array(5).fill(0);
+let currentTab = "manual";
+let lastSave = Date.now();
+
+function multiplier() {
+    return 1 + rebirths;
+}
+
+function format(n) {
+    if (n < 1000000) return Math.floor(n).toLocaleString("de-DE");
+    if (n < 1e12) return (n / 1e6).toFixed(2) + " Mio.";
+    return n.toExponential(2);
+}
+
+function clickCapy() {
+    money += clickPower * multiplier();
+    update();
+}
+
+function showTab(tab) {
+    currentTab = tab;
+    document.getElementById("manualTab").classList.toggle("active", tab === "manual");
+    document.getElementById("autoTab").classList.toggle("active", tab === "auto");
+    renderShop();
+}
+
+function renderShop() {
+    const list = document.getElementById("upgradeList");
+    list.innerHTML = "";
+
+    const upgrades = currentTab === "manual" ? manualUpgrades : autoUpgrades;
+    const levels = currentTab === "manual" ? manualLevels : autoLevels;
+
+    upgrades.forEach((u, i) => {
+        const level = levels[i];
+        const gain = currentTab === "manual" ? u.power : u.cps;
+        const type = currentTab === "manual" ? "Münzen pro Klick" : "Münzen pro Sekunde";
+
+        const button = document.createElement("button");
+        button.className = "upgrade";
+        button.disabled = money < u.price;
+
+        button.innerHTML = `
+            <span class="emoji">${u.emoji}</span>
+            <span class="details">
+                <strong>${u.name}</strong>
+                <small>Level ${level} · +${format(gain)} ${type}</small>
+            </span>
+            <span class="price">🪙 ${format(u.price)}</span>
+        `;
+
+        button.onclick = () => buyUpgrade(currentTab, i);
+        list.appendChild(button);
+    });
+}
+
+function buyUpgrade(type, i) {
+    const u = type === "manual" ? manualUpgrades[i] : autoUpgrades[i];
+
+    if (money < u.price) return;
+
+    money -= u.price;
+
+    if (type === "manual") {
+        manualLevels[i]++;
+        clickPower += u.power;
+    } else {
+        autoLevels[i]++;
+        autoPower += u.cps;
+    }
+
+    update();
+}
+
+function rebirthCost() {
+    return 100000 * Math.pow(5, rebirths);
+}
+
+function doRebirth() {
+    if (money < rebirthCost()) {
+        document.getElementById("message").textContent =
+            "Du brauchst noch mehr Münzen!";
+        return;
+    }
+
+    if (!confirm("Rebirth? Münzen und alle Upgrades werden zurückgesetzt.")) {
+        return;
+    }
+
+    money = 0;
+    clickPower = 1;
+    autoPower = 0;
+    manualLevels = Array(5).fill(0);
+    autoLevels = Array(5).fill(0);
+    rebirths++;
+
+    document.getElementById("message").textContent =
+        "🎉 Rebirth! Dein Multiplikator ist jetzt x" + multiplier() + "!";
+
+    update();
+    saveGame();
+}
+
+function update() {
+    document.getElementById("topMoney").textContent = format(money);
+    document.getElementById("coinCount").textContent = format(money) + " Münzen";
+    document.getElementById("rebirths").textContent = rebirths;
+    document.getElementById("multi").textContent = multiplier();
+    document.getElementById("cps").textContent = format(autoPower * multiplier());
+    document.getElementById("clickInfo").textContent =
+        "+" + format(clickPower * multiplier()) + " Münzen pro Klick";
+
+    document.getElementById("nextMulti").textContent = "x" + (multiplier() + 1);
+    document.getElementById("rebirthPrice").textContent = format(rebirthCost());
+    document.getElementById("rebirthButton").disabled = money < rebirthCost();
+
+    renderShop();
+}
+
+function saveGame() {
+    try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify({
+            money, clickPower, autoPower, rebirths,
+            manualLevels, autoLevels, lastSave: Date.now()
+        }));
+        lastSave = Date.now();
+    } catch (e) {
+        document.getElementById("offlineInfo").textContent =
+            "Speichern nicht verfügbar";
+    }
+}
+
+function loadGame() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) {
+            update();
+            return;
+        }
+
+        const data = JSON.parse(raw);
+
+        money = Math.max(0, Number(data.money) || 0);
+        rebirths = Math.max(0, Math.floor(Number(data.rebirths) || 0));
+
+        manualLevels = manualUpgrades.map((_, i) =>
+            Math.max(0, Math.floor(Number(data.manualLevels?.[i]) || 0))
+        );
+
+        autoLevels = autoUpgrades.map((_, i) =>
+            Math.max(0, Math.floor(Number(data.autoLevels?.[i]) || 0))
+        );
+
+        clickPower = 1 + manualLevels.reduce(
+            (sum, level, i) => sum + level * manualUpgrades[i].power, 0
+        );
+
+        autoPower = autoLevels.reduce(
+            (sum, level, i) => sum + level * autoUpgrades[i].cps, 0
+        );
+
+        const elapsed = Math.min(
+            7 * 24 * 60 * 60,
+            Math.max(0, (Date.now() - (Number(data.lastSave) || Date.now())) / 1000)
+        );
+
+        const reward = Math.floor(autoPower * multiplier() * elapsed);
+        money += reward;
+
+        document.getElementById("offlineInfo").textContent =
+            format(reward) + " Münzen";
+
+        update();
+        saveGame();
+    } catch (e) {
+        update();
+    }
+}
+
+loadGame();
+
+setInterval(() => {
+    money += autoPower * multiplier();
+    update();
+}, 1000);
+
+setInterval(saveGame, 5000);
+
+window.addEventListener("pagehide", saveGame);
+</script>
+</body>
+</html>
